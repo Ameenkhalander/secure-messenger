@@ -10,8 +10,6 @@ A private messaging app where messages are encrypted in the browser and the serv
 
 > Educational project. The protocol composes standard primitives but has **not** been independently audited. See [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
 
-## Why I built this
-Most chat apps ask you to trust the server. I wanted to build one where the server **cannot** read your messages, and to learn how real end-to-end encryption works by using standard, vetted cryptography instead of inventing my own.
 
 ## Features
 - Registration, login/logout, Argon2id hashing, lockout, rate limiting, session expiry, password reset, account settings
