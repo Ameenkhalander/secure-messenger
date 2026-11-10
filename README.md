@@ -1,65 +1,64 @@
-# Sealed: end-to-end encrypted messenger
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-realtime-010101?logo=socketdotio)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-educational%20project-orange)
 
-A private messaging app where messages are encrypted in the browser and the server only stores ciphertext. Built with Flask, Flask-SocketIO, SQLAlchemy and WebCrypto.
+## Why I built this
+Most chat apps ask you to trust the server. I wanted to build one where the server **cannot** read your messages, and to learn how real end-to-end encryption works by implementing it with standard, vetted cryptography instead of inventing my own.
 
-> Educational project. The protocol composes standard primitives but has **not** been independently audited. See [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
+## What makes it interesting
+- **The server only sees ciphertext.** Encryption and signing happen in the browser with WebCrypto. Private keys are created non-extractable and never leave the device.
+- **Two implementations that must agree.** The Python reference (`cryptography` library) and the JavaScript client are tested against each other in both directions, so a message encrypted by one decrypts in the other.
+- **Tamper-proof messages.** Every message is signed with Ed25519 and verified before decryption. Changing one byte of the ciphertext, the sender, the conversation id or a recipient envelope makes it fail.
+- **Replay protection.** Unique message ids, a signed timestamp window, and context binding stop captured messages being re-sent.
+- **Safety numbers.** Users can compare key fingerprints to detect a man-in-the-middle, and the app warns when a contact's key changes.
+- **Real session security.** Revocable server-side sessions, live WebSockets that close when a session is revoked, suspicious-login alerts, lockout and CSRF protection.
 
-## Features
-- Registration, login/logout, Argon2id hashing, lockout, rate limiting, session expiry, password reset, account settings
-- Client-side E2EE: X25519 + HKDF + AES-256-GCM, Ed25519 signatures, unique nonces, key rotation
-- One-to-one and group chats (admins, add/remove members), real-time delivery, read receipts, typing, presence, unread counters, delete for everyone
-- Security dashboard: encryption status, devices and fingerprints, active sessions, login history, suspicious-login alerts
-- Dark/light themes, responsive layout (mobile and desktop)
-
-## Screenshots
-| Chat | Security dashboard |
+## Tech stack
+| Layer | Technology |
 |---|---|
-| _docs/screenshots/chat.png_ | _docs/screenshots/security.png_ |
+| Backend | Python 3.12, Flask, Flask-SocketIO, SQLAlchemy |
+| Database | SQLite (dev), PostgreSQL (production) |
+| Frontend | HTML5, CSS3, JavaScript (ES modules), Bootstrap 5 |
+| Cryptography | X25519, HKDF-SHA256, AES-256-GCM, Ed25519, Argon2id |
+| Testing | pytest, Node test runner |
+| Deployment | Docker, Docker Compose, Render |
 
-## Architecture
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (diagram) and [docs/API.md](docs/API.md).
-
-## Run locally (Windows PowerShell)
-Requires Python 3.12+ and a current browser (Chrome/Edge 137+, Firefox 130+, Safari 17+ for X25519/Ed25519 in WebCrypto). Use `http://localhost`: WebCrypto needs a secure context.
-
-```powershell
-cd secure-messenger
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-Copy-Item .env.example .env
-python run.py
-```
-Open http://localhost:5000, register two accounts in two different browsers (or one normal and one private window), and start chatting.
-
-## Run tests
-```powershell
-pytest                 # backend, security and crypto tests
-node --test tests/js/*.test.mjs   # browser crypto module (Node 20+)
+## How a message travels
+```mermaid
+sequenceDiagram
+  participant A as Alice's browser
+  participant S as Server
+  participant B as Bob's browser
+  A->>S: Fetch Bob's public keys
+  A->>A: Encrypt with AES-256-GCM, wrap key for each device, sign
+  A->>S: Ciphertext + wrapped keys + signature
+  S->>S: Verify signature, store ciphertext only
+  S-->>B: Real-time delivery (ciphertext)
+  B->>B: Verify signature, unwrap key, decrypt
 ```
 
-## Linux
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-export APP_ENV=production SECRET_KEY=$(python -c "import secrets;print(secrets.token_hex(32))") COOKIE_SECURE=false
-python -c "from app import create_app; from app.extensions import db; a=create_app(); a.app_context().push(); db.create_all()"
-gunicorn --worker-class gthread --workers 1 --threads 100 --bind 0.0.0.0:8000 run:app
-```
-Put it behind an HTTPS reverse proxy (set `COOKIE_SECURE=true`, `TRUSTED_PROXY_COUNT=1`, and forward WebSocket upgrades).
+## Try it in 2 minutes
+1. Start the app and create two accounts, each in a different browser or a private window.
+2. Open the chat page in **both** browsers once, so each creates its device keys.
+3. Start a chat from the **+** button, send a message, and watch it arrive in real time with typing indicators and read ticks.
+4. Open the **Security dashboard** from the menu to see devices, fingerprints, sessions and login history.
+5. Open `instance/messenger.db` and look at the message rows. You'll see only unreadable ciphertext.
 
-## Docker
-```powershell
-# .env must contain SECRET_KEY and POSTGRES_PASSWORD
-docker compose up --build
-```
-Open http://localhost:8000.
+## Roadmap
+- [ ] Double Ratchet for forward secrecy
+- [ ] Encrypted file and image attachments
+- [ ] Multi-device key backup
+- [ ] Redis message queue for horizontal scaling
+- [ ] Disappearing messages
+- [ ] Independent security audit
 
-## Configuration
-See `.env.example`. Never commit `.env`, databases or keys (`.gitignore` covers them).
+## What I learned
+- How key agreement, key derivation and authenticated encryption fit together
+- Why authenticating the sender matters as much as hiding the content
+- Web security basics: CSRF, CSP, session management and rate limiting
+- Why untested assumptions between two languages (Python and JavaScript) need interoperability tests
 
-## How it works
-Each browser creates its own key pairs; private keys are non-extractable and never leave it. To send, the client wraps a fresh content key for every recipient device and signs the result. The server verifies signatures and relays opaque envelopes. Details: [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
-
-## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md). License: [MIT](LICENSE).
+## Known limitations
+This is a learning project. It has no forward secrecy per message, trusts keys on first use, and has not been independently audited. See [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) for the full list. Do not use it for high-risk communication.
