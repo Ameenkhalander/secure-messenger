@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import errors_for, flashes %}
+{% block title %}Account settings{% endblock %}
+{% block body_class %}page-body{% endblock %}
+{% block content %}
+<main class="page narrow">
+  <nav class="page-nav">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.chat') }}">← Back to chats</a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.security') }}">Security dashboard</a>
+  </nav>
+  <h1>Account settings</h1>
+  {{ flashes() }}
+  <section class="panel">
+    <h2>Profile</h2>
+    <form method="post" action="{{ url_for('main.update_profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="display_name">Display name</label>
+      <input class="form-control" id="display_name" name="display_name" maxlength="64" value="{{ current_user.display_name }}" required>
+      {{ errors_for(errors, 'display_name') }}
+      <div class="form-text">Username <strong>@{{ current_user.username }}</strong> · {{ current_user.email }}</div>
+      <button class="btn btn-accent mt-3" type="submit">Save changes</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Change password</h2>
+    <p class="muted">Changing your password signs out your other sessions. Your message keys are stored on your devices and are not affected.</p>
+    <form method="post" action="{{ url_for('main.update_password') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="current_password">Current password</label>
+      <input class="form-control" id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+      {{ errors_for(errors, 'current_password') }}
+      <label class="form-label mt-3" for="password">New password</label>
+      <input class="form-control" id="password" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+      {{ errors_for(errors, 'password') }}
+      <label class="form-label mt-3" for="confirm">Confirm new password</label>
+      <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+      {{ errors_for(errors, 'confirm') }}
+      <button class="btn btn-accent mt-3" type="submit">Update password</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

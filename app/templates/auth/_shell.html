@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import flashes %}
+{% block body_class %}auth-body{% endblock %}
+{% block content %}
+<main class="auth">
+  <section class="auth-brand">
+    <a class="brand" href="{{ url_for('main.index') }}"><img src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="36" height="36"> Sealed</a>
+    <h1>Messages only the two of you can open.</h1>
+    <p>Your messages are encrypted in this browser before they leave it. The server stores sealed envelopes it cannot read, and your private keys never leave your device.</p>
+    <ul class="proofs">
+      <li>X25519 key agreement</li><li>AES-256-GCM encryption</li><li>Ed25519 signatures</li><li>Argon2id password hashing</li>
+    </ul>
+  </section>
+  <section class="auth-form">
+    <div class="auth-card">
+      {{ flashes() }}
+      {% block form %}{% endblock %}
+    </div>
+  </section>
+</main>
+{% endblock %}

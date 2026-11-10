@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% from "_macros.html" import lock_icon %}
+{% block title %}Chats{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block content %}
+<div class="app" id="app" data-user-id="{{ current_user.id }}" data-username="{{ current_user.username }}" data-display-name="{{ current_user.display_name }}">
+  <aside class="sidebar" aria-label="Conversations">
+    <header class="side-head">
+      <div class="me">
+        <div class="me-name">{{ current_user.display_name }}</div>
+        <div class="me-handle">@{{ current_user.username }}</div>
+      </div>
+      <div class="side-actions">
+        <button class="btn-icon" id="btn-new-chat" type="button" aria-label="New chat" title="New chat">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="btn-icon" id="btn-new-group" type="button" aria-label="New group" title="New group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.5"/><path d="M2.5 19c.6-3.3 3.1-5 6.5-5s5.9 1.7 6.5 5M16 6a3.5 3.5 0 0 1 0 7M18 14.2c2 .5 3.2 2 3.5 4.8"/></svg>
+        </button>
+        <button class="btn-icon" type="button" data-theme-toggle aria-label="Switch light or dark theme" title="Theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        </button>
+        <div class="dropdown">
+          <button class="btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('main.security') }}">Security dashboard</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('main.settings') }}">Account settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="post" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="dropdown-item" type="submit">Sign out</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+    <div class="search"><input id="search" class="form-control" type="search" placeholder="Search chats" aria-label="Search conversations" autocomplete="off"></div>
+    <div id="conv-list" class="conv-list" role="list"></div>
+    <a id="key-status" class="key-status" href="{{ url_for('main.security') }}" title="Open the security dashboard">
+      {{ lock_icon(18) }}
+      <span><strong>Sealed on this device</strong><span class="fp">Key <code id="key-fp">setting up…</code></span></span>
+    </a>
+  </aside>
+
+  <main class="chat" id="chat">
+    <div class="empty" id="empty">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="" width="64" height="64">
+      <h2>Pick a conversation</h2>
+      <p>Everything you send is encrypted in this browser first. Start a chat from the + button.</p>
+    </div>
+    <section class="thread" id="thread" hidden aria-label="Conversation">
+      <header class="thread-head" id="thread-head"></header>
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <textarea id="composer-input" rows="1" maxlength="4000" placeholder="Write a message" aria-label="Message"></textarea>
+        <button class="send" type="submit" aria-label="Send message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>
+        </button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="newChatTitle">New chat</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <input id="newchat-q" class="form-control" placeholder="Search by username or name" aria-label="Search people" autocomplete="off">
+      <div id="newchat-results" class="results"></div>
+    </div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="newGroupModal" tabindex="-1" aria-labelledby="newGroupTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="newGroupTitle">New group</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <label class="form-label" for="group-name">Group name</label>
+      <input id="group-name" class="form-control" maxlength="80" autocomplete="off">
+      <label class="form-label mt-3" for="group-q">Add people</label>
+      <input id="group-q" class="form-control" placeholder="Search by username or name" autocomplete="off">
+      <div id="group-chips" class="chips"></div>
+      <div id="group-results" class="results"></div>
+    </div>
+    <div class="modal-footer"><button id="group-create" type="button" class="btn btn-accent">Create group</button></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="info-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="info-title">Details</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body" id="info-body"></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

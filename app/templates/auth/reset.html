@@ -1,0 +1,17 @@
+{% extends "auth/_shell.html" %}
+{% from "_macros.html" import errors_for %}
+{% block title %}Choose a new password{% endblock %}
+{% block form %}
+<h2>Choose a new password</h2>
+{{ errors_for(errors, 'token') }}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="form-label" for="password">New password</label>
+  <input class="form-control" id="password" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required autofocus>
+  {{ errors_for(errors, 'password') }}
+  <label class="form-label mt-3" for="confirm">Confirm new password</label>
+  <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+  {{ errors_for(errors, 'confirm') }}
+  <button class="btn btn-accent w-100 mt-4" type="submit">Update password</button>
+</form>
+{% endblock %}

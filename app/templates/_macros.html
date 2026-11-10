@@ -1,0 +1,15 @@
+{% macro errors_for(errors, name) -%}
+  {%- if errors and errors.get(name) -%}
+    {%- for msg in errors[name] %}<div class="field-error" role="alert">{{ msg }}</div>{% endfor -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro flashes() -%}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="alert alert-{{ 'success' if category == 'success' else 'info' }} py-2" role="status">{{ message }}</div>{% endfor %}
+  {% endwith %}
+{%- endmacro %}
+
+{% macro lock_icon(size=20) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z"/></svg>
+{%- endmacro %}

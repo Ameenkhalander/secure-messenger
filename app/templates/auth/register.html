@@ -1,0 +1,27 @@
+{% extends "auth/_shell.html" %}
+{% from "_macros.html" import errors_for %}
+{% block title %}Create account{% endblock %}
+{% block form %}
+<h2>Create your account</h2>
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="form-label" for="display_name">Display name</label>
+  <input class="form-control" id="display_name" name="display_name" maxlength="64" autocomplete="name" value="{{ form.get('display_name', '') }}">
+  <label class="form-label mt-3" for="username">Username</label>
+  <input class="form-control" id="username" name="username" maxlength="32" autocomplete="username" required value="{{ form.get('username', '') }}" aria-describedby="u-help">
+  <div id="u-help" class="form-text">Lowercase letters, numbers and underscores. People find you by this.</div>
+  {{ errors_for(errors, 'username') }}
+  <label class="form-label mt-3" for="email">Email</label>
+  <input class="form-control" id="email" name="email" type="email" maxlength="254" autocomplete="email" required value="{{ form.get('email', '') }}">
+  {{ errors_for(errors, 'email') }}
+  <label class="form-label mt-3" for="password">Password</label>
+  <input class="form-control" id="password" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required aria-describedby="p-help">
+  <div id="p-help" class="form-text">At least 12 characters. A short sentence works well.</div>
+  {{ errors_for(errors, 'password') }}
+  <label class="form-label mt-3" for="confirm">Confirm password</label>
+  <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+  {{ errors_for(errors, 'confirm') }}
+  <button class="btn btn-accent w-100 mt-4" type="submit">Create account</button>
+</form>
+<p class="auth-alt">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+{% endblock %}

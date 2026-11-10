@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_macros.html" import flashes, lock_icon %}
+{% block title %}Security{% endblock %}
+{% block body_class %}page-body{% endblock %}
+{% block content %}
+<main class="page" id="security" data-user-id="{{ current_user.id }}">
+  <nav class="page-nav">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.chat') }}">← Back to chats</a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.settings') }}">Account settings</a>
+  </nav>
+  <h1>Security dashboard</h1>
+
+  <section class="panel">
+    <h2>Encryption status</h2>
+    <ul class="status-list">
+      <li><span class="ok">{{ lock_icon(16) }}</span> Messages are encrypted in your browser with AES-256-GCM before upload.</li>
+      <li><span class="ok">{{ lock_icon(16) }}</span> Each message is signed with Ed25519 and verified before it is shown.</li>
+      <li><span class="ok">{{ lock_icon(16) }}</span> The server stores ciphertext only. It never receives plaintext or private keys.</li>
+    </ul>
+    <p id="local-status" class="local-status">Checking this browser…</p>
+  </section>
+
+  {% if alerts %}
+  <section class="panel alerts">
+    <div class="panel-head"><h2>Security notifications</h2><button class="btn btn-sm btn-outline-secondary" data-action="ack-alerts" type="button">Mark all as seen</button></div>
+    <ul class="rows">
+      {% for a in alerts %}
+      <li class="sev-{{ a.severity }}"><strong>{{ a.detail or a.event }}</strong><span class="muted">{{ a.created_at }} · {{ a.ip or 'unknown IP' }} · {{ a.agent }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Registered devices and public key fingerprints</h2>
+    <p class="muted">Compare a fingerprint with the one shown on your other device to confirm they are really yours. Private keys are not listed because the server never has them.</p>
+    {% if not devices %}<p class="muted">No devices yet. Open the chat page once to create this browser's keys.</p>{% endif %}
+    <ul class="rows">
+      {% for d in devices %}
+      <li data-id="{{ d.id }}" data-device-id="{{ d.id }}"
+          {% if d.key and not d.revoked %}data-key-id="{{ d.key.id }}" data-enc-pub="{{ d.key.enc_pub }}" data-sign-pub="{{ d.key.sign_pub }}" data-fingerprint="{{ d.key.fingerprint }}"{% endif %}>
+        <div class="row-main">
+          <strong>{{ d.name }}</strong>
+          <span class="tag local-tag" hidden>This browser</span>
+          {% if d.revoked %}<span class="tag tag-muted">Removed</span>{% endif %}
+          <div class="muted">Added {{ d.created_at }}{% if d.last_seen_at %} · last active {{ d.last_seen_at }}{% endif %}</div>
+          {% if d.key and not d.revoked %}
+          <code class="fp-code">{{ d.key.fingerprint | batch(4) | map('join') | join(' ') }}</code>
+          <div class="fp-check muted"></div>
+          {% endif %}
+        </div>
+        {% if not d.revoked %}
+        <div class="row-actions">
+          <button class="btn btn-sm btn-outline-secondary" data-action="rotate-keys" type="button">Rotate keys</button>
+          <button class="btn btn-sm btn-outline-danger" data-action="revoke-device" data-id="{{ d.id }}" type="button">Remove</button>
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Active sessions</h2>
+      {% if sessions|length > 1 %}<button class="btn btn-sm btn-outline-danger" data-action="revoke-others" type="button">Sign out all other sessions</button>{% endif %}
+    </div>
+    <ul class="rows">
+      {% for s in sessions %}
+      <li>
+        <div class="row-main"><strong>{{ s.agent }}</strong>{% if s.current %} <span class="tag">This session</span>{% endif %}
+          <div class="muted">{{ s.ip or 'unknown IP' }} · signed in {{ s.created_at }} · last active {{ s.last_seen_at }} · expires {{ s.expires_at }}</div></div>
+        {% if not s.current %}<div class="row-actions"><button class="btn btn-sm btn-outline-danger" data-action="revoke-session" data-id="{{ s.id }}" type="button">Sign out</button></div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Login history</h2>
+    <div class="table-wrap"><table class="table table-sm align-middle">
+      <thead><tr><th>When (UTC)</th><th>Event</th><th>Network</th><th>Browser</th></tr></thead>
+      <tbody>
+      {% for h in history %}
+        <tr class="sev-{{ h.severity }}"><td>{{ h.created_at }}</td><td>{{ h.event | replace('_', ' ') }}</td><td>{{ h.ip or '-' }}</td><td>{{ h.agent }}</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No sign-ins recorded yet.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Recent security events</h2>
+    <ul class="rows compact">
+      {% for e in events %}<li class="sev-{{ e.severity }}"><span>{{ e.detail or (e.event | replace('_', ' ')) }}</span><span class="muted">{{ e.created_at }}</span></li>{% endfor %}
+    </ul>
+  </section>
+</main>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', filename='js/security.js') }}"></script>{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "auth/_shell.html" %}
+{% block title %}Reset password{% endblock %}
+{% block form %}
+<h2>Reset your password</h2>
+<p class="text-secondary">Enter your email and we will send a link that works for 30 minutes. Resetting your password does not affect your message keys, which live on your devices.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="form-label" for="email">Email</label>
+  <input class="form-control" id="email" name="email" type="email" autocomplete="email" required autofocus>
+  <button class="btn btn-accent w-100 mt-4" type="submit">Send reset link</button>
+</form>
+<p class="auth-alt"><a href="{{ url_for('auth.login') }}">Back to sign in</a></p>
+{% endblock %}

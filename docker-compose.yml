@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: messenger
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: messenger
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U messenger"]
+      interval: 5s
+      retries: 10
+  web:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DATABASE_URL: postgresql://messenger:${POSTGRES_PASSWORD}@db:5432/messenger
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}   # set true when served over HTTPS
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+    ports: ["8000:8000"]
+    command: >
+      sh -c "python -c 'from app import create_app; from app.extensions import db; a=create_app(); a.app_context().push(); db.create_all()' &&
+             gunicorn --worker-class gthread --workers 1 --threads 100 --bind 0.0.0.0:8000 run:app"
+volumes:
+  pgdata:

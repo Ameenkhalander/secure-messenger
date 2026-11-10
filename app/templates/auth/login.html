@@ -1,0 +1,16 @@
+{% extends "auth/_shell.html" %}
+{% block title %}Sign in{% endblock %}
+{% block form %}
+<h2>Sign in</h2>
+{% if error %}<div class="alert alert-danger py-2" role="alert">{{ error }}</div>{% endif %}
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="form-label" for="identifier">Username or email</label>
+  <input class="form-control" id="identifier" name="identifier" autocomplete="username" required autofocus>
+  <label class="form-label mt-3" for="password">Password</label>
+  <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
+  <button class="btn btn-accent w-100 mt-4" type="submit">Sign in</button>
+</form>
+<p class="auth-alt"><a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a></p>
+<p class="auth-alt">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+{% endblock %}
